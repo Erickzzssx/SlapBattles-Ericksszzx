@@ -1,0 +1,84 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Criando GUI
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Button = Instance.new("TextButton")
+
+-- Proteção para exibir a GUI corretamente
+if syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = game:GetService("CoreGui")
+elseif gethui then
+    ScreenGui.Parent = gethui()
+else
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+end
+
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.Position = UDim2.new(0.8, 0, 0.3, 0)
+Frame.Size = UDim2.new(0, 160, 0, 60)
+Frame.Active = true
+Frame.Draggable = true
+
+Button.Parent = Frame
+Button.Size = UDim2.new(1, 0, 1, 0)
+Button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+Button.Text = "Auto Slap: OFF"
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.Font = Enum.Font.SourceSansBold
+Button.TextSize = 18
+
+-- Variável de controle
+local autoSlapEnabled = false
+
+-- Função para encontrar o jogador mais próximo
+local function getClosestPlayer(range)
+    local closestPlayer = nil
+    local shortestDistance = range
+
+    for _, target in pairs(game.Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (humanoidRootPart.Position - target.Character.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestPlayer = target
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- Loop do Auto Slap com Mira Automática
+spawn(function()
+    while true do
+        if autoSlapEnabled then
+            local slapTool = character:FindFirstChildOfClass("Tool")
+            local target = getClosestPlayer(10) -- Encontra inimigo dentro do alcance
+
+            if slapTool and target then
+                -- Rotaciona o personagem para mirar no inimigo antes de dar o tapa
+                humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position, target.Character.HumanoidRootPart.Position)
+                
+                wait(0.1) -- Pequeno delay para evitar bugs
+                slapTool:Activate() -- Dá o tapa!
+            end
+        end
+        wait(0.1)
+    end
+end)
+
+-- Botão de ativar/desativar
+Button.MouseButton1Click:Connect(function()
+    autoSlapEnabled = not autoSlapEnabled
+    if autoSlapEnabled then
+        Button.Text = "Auto Slap: ON"
+        Button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        Button.Text = "Auto Slap: OFF"
+        Button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
