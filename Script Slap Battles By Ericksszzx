@@ -34,11 +34,23 @@ Button.TextSize = 18
 
 -- Variável de controle
 local autoSlapEnabled = false
+local slapRange = 20 -- AUMENTANDO O RANGE DO TAPA
 
--- Função para encontrar o jogador mais próximo
-local function getClosestPlayer(range)
+-- Função para atualizar as referências quando o jogador morre e renasce
+local function updateCharacterReferences()
+    character = player.Character or player.CharacterAdded:Wait()
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+end
+
+-- Detecta a morte do jogador e chama a função de atualização
+player.CharacterAdded:Connect(function()
+    updateCharacterReferences()
+end)
+
+-- Função para encontrar o jogador mais próximo dentro do range
+local function getClosestPlayer()
     local closestPlayer = nil
-    local shortestDistance = range
+    local shortestDistance = slapRange
 
     for _, target in pairs(game.Players:GetPlayers()) do
         if target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
@@ -52,19 +64,29 @@ local function getClosestPlayer(range)
     return closestPlayer
 end
 
--- Loop do Auto Slap com Mira Automática
+-- Função para dar tapa com range aumentado
+local function slapTarget(target)
+    if target and character:FindFirstChildOfClass("Tool") then
+        local slapTool = character:FindFirstChildOfClass("Tool")
+
+        -- TELEPORTA O TAPINHA NA DIREÇÃO DO INIMIGO
+        humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position, target.Character.HumanoidRootPart.Position)
+        
+        -- FORÇA O ALCANCE AUMENTADO
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame + humanoidRootPart.CFrame.LookVector * slapRange / 2
+
+        -- Dá o tapa
+        slapTool:Activate()
+    end
+end
+
+-- Loop do Auto Slap com Range Aumentado
 spawn(function()
     while true do
         if autoSlapEnabled then
-            local slapTool = character:FindFirstChildOfClass("Tool")
-            local target = getClosestPlayer(10) -- Encontra inimigo dentro do alcance
-
-            if slapTool and target then
-                -- Rotaciona o personagem para mirar no inimigo antes de dar o tapa
-                humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position, target.Character.HumanoidRootPart.Position)
-                
-                wait(0.1) -- Pequeno delay para evitar bugs
-                slapTool:Activate() -- Dá o tapa!
+            local target = getClosestPlayer()
+            if target then
+                slapTarget(target)
             end
         end
         wait(0.1)
